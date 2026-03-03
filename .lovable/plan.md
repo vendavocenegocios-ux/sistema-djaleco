@@ -1,187 +1,117 @@
 
-# Plano: App de Gestao Djaleco
+# Plano: Ajustes em Pedidos, Comissoes, Financeiro Pagarme e Logo
 
-Sistema completo de gestao para e-commerce de jalecos e scrubs, com 4 modulos principais conectados ao banco de dados Supabase ja existente (164 clientes, 8 pedidos, 2 vendedores).
+## 1. Numeracao de Pedidos WhatsApp
 
----
+Pedidos com `origem = "site"` mantem o numero vindo da Nuvemshop (ex: #1234).
+Pedidos com `origem = "whatsapp"` recebem numeracao automatica no formato `#001-WP`, `#002-WP`, etc.
 
-## Estrutura do App
+**Logica**: Ao criar um pedido via WhatsApp, buscar o ultimo numero WP no banco e incrementar.
 
-### Layout Principal
-- **Sidebar** fixa a esquerda com navegacao entre modulos
-- **Header** com nome "Djaleco" e informacoes contextuais
-- Design moderno com tema claro, cores profissionais (branco/azul/cinza)
-
-### Paginas e Rotas
-
-| Rota | Pagina | Descricao |
-|------|--------|-----------|
-| `/` | Dashboard | Visao geral com KPIs e graficos |
-| `/pedidos` | Pedidos | Lista e gestao de pedidos |
-| `/pedidos/:id` | Detalhe Pedido | Visualizar/editar pedido individual |
-| `/producao` | Producao | Kanban das etapas de producao |
-| `/clientes` | Clientes | CRM com lista e filtros |
-| `/clientes/:id` | Detalhe Cliente | Ficha completa do cliente |
-| `/financeiro` | Financeiro | Resumo financeiro e comissoes |
-| `/vendedores` | Vendedores | Gestao de vendedores |
+Arquivos afetados:
+- `src/hooks/usePedidos.ts` -- adicionar helper para gerar proximo numero WP
+- Formulario de criacao de pedido (quando existir) -- aplicar automaticamente
 
 ---
 
-## Modulo 1: Dashboard (Pagina Inicial)
+## 2. Comissao Padrao com William Nogueira
 
-Cards de KPIs:
-- Total de pedidos (mes atual)
-- Faturamento bruto do mes
-- Ticket medio
-- Clientes novos no mes
+No sync da Nuvemshop e na criacao de pedidos do site:
+- Vendedor padrao: **William Nogueira** (id: `97f16c11-121d-47d3-9212-ece04cbcb348`)
+- Formula da comissao: `(valor_bruto - taxa_pagarme - frete) * taxa_comissao / 100`
+- Drop-down no detalhe do pedido para poder trocar o vendedor se necessario
 
-Graficos (usando Recharts, ja instalado):
-- Faturamento dos ultimos 6 meses (barra)
-- Pedidos por origem (pizza: site vs whatsapp)
-- Status da producao (barra horizontal)
-
-Lista dos ultimos 5 pedidos com acesso rapido.
+Arquivos afetados:
+- `supabase/functions/nuvemshop-sync/index.ts` -- calcular comissao automaticamente usando William como padrao
+- `supabase/functions/nuvemshop-webhook/index.ts` -- mesmo calculo
+- `src/pages/PedidoDetalhe.tsx` -- adicionar select de vendedor com William como default
 
 ---
 
-## Modulo 2: Gestao de Vendas (Pedidos)
+## 3. Nova Aba "Pagarme" no Financeiro
 
-**Lista de Pedidos:**
-- Tabela com colunas: numero, cliente, valor bruto, origem, etapa producao, data
-- Filtros por: origem, etapa de producao, periodo
-- Busca por nome do cliente ou numero do pedido
-- Botao para criar novo pedido
+Criar uma edge function `pagarme-extrato` que consulta a API v5 do Pagarme:
+- Endpoint: `GET https://api.pagar.me/core/v5/charges` e/ou `GET https://api.pagar.me/core/v5/orders`
+- Autenticacao: Basic Auth com `PAGARME_API_KEY` (ja configurada nos secrets)
+- Retorna transacoes com valores bruto, taxa, liquido e datas de pagamento
 
-**Formulario de Pedido (criar/editar):**
-- Dados do cliente (nome, telefone, cidade, estado)
-- Itens do pedido (tabela editavel com produto, quantidade, cor, tamanho)
-- Valores: bruto, frete, taxa pagarme, comissao, liquido
-- Vendedor (select dos vendedores ativos)
-- Origem (site/whatsapp)
-- Rastreio e datas
+Na pagina Financeiro:
+- Nova aba **"Pagarme"** ao lado de "Visao Geral" e "Comissoes"
+- Exibe tabela estilo extrato: data, pedido, valor bruto, taxa, valor liquido, status
+- Filtros: por ano, por mes, e personalizado (range de datas)
+- Agrupamento por periodo de deposito (payment date) quando disponivel
+- Cards de resumo: total bruto, total taxas, total liquido no periodo filtrado
 
----
+Arquivos a criar:
+- `supabase/functions/pagarme-extrato/index.ts` -- edge function que consulta a API Pagarme
 
-## Modulo 3: Producao (Kanban)
-
-Quadro Kanban com colunas baseadas nas etapas existentes:
-- **Novo** - Pedidos recem-criados
-- **Planejamento** - Em fase de planejamento
-- **Corte** - Material em corte
-
-Cada card mostra: numero do pedido, cliente, itens resumidos, tempo na etapa.
-Arrastar e soltar (drag-and-drop) para mover entre etapas.
-Ao mover, atualiza `etapa_producao` e `etapa_entrada_em` no banco.
+Arquivos a editar:
+- `src/pages/Financeiro.tsx` -- adicionar aba "Pagarme" com filtros e tabela
+- `supabase/config.toml` -- registrar nova edge function
 
 ---
 
-## Modulo 4: CRM de Clientes
+## 4. Logo da Djaleco na Sidebar
 
-**Lista de Clientes:**
-- Tabela com: nome, telefone, email, cidade/estado, total pedidos, total gasto, tags
-- Filtros por tags, cidade, estado
-- Busca por nome, email ou telefone
-- Ordenacao por total gasto, total pedidos, ultima compra
+- Copiar a imagem `logo_Djaleco.png` para `src/assets/`
+- Substituir o emoji e texto "Djaleco" na sidebar pela imagem da logo
+- Garantir que a logo fica visivel tanto na sidebar expandida quanto colapsada (versao menor)
 
-**Ficha do Cliente:**
-- Dados cadastrais editaveis
-- Historico de pedidos vinculados (busca por nome do cliente nos pedidos)
-- Tags editaveis
-- Campo de observacoes
-- Metricas: total gasto, total pedidos, primeira/ultima compra
+Arquivos afetados:
+- `src/components/layout/AppSidebar.tsx` -- importar e usar a logo
 
 ---
 
-## Modulo 5: Financeiro
+## 5. Cores (sem mudanca)
 
-**Visao Geral:**
-- Cards: faturamento bruto, liquido, total frete, total taxas, total comissoes
-- Filtros por periodo (mes/semana/customizado)
-- Grafico de faturamento por periodo
-
-**Comissoes dos Vendedores:**
-- Lista de pedidos com comissao pendente/paga
-- Marcar comissao como paga (atualiza `comissao_paga` e `comissao_paga_em`)
-- Resumo por vendedor
-
-**Gestao de Vendedores:**
-- CRUD completo de vendedores (nome, telefone, email, taxa comissao, status)
+As cores rosa/rose ja aplicadas no `src/index.css` permanecem inalteradas. O grafico de barras no Financeiro sera atualizado para usar `hsl(350, 45%, 65%)` em vez do azul antigo.
 
 ---
 
 ## Detalhes Tecnicos
 
-### Arquivos a criar
+### Edge Function `pagarme-extrato`
 
 ```text
-src/
-  components/
-    layout/
-      AppSidebar.tsx        -- Sidebar de navegacao
-      AppLayout.tsx          -- Layout com sidebar + content
-    dashboard/
-      KpiCards.tsx           -- Cards de metricas
-      RevenueChart.tsx       -- Grafico de faturamento
-      OrdersByOrigin.tsx     -- Grafico pizza
-      ProductionStatus.tsx   -- Status da producao
-      RecentOrders.tsx       -- Ultimos pedidos
-    pedidos/
-      PedidosList.tsx        -- Tabela de pedidos
-      PedidoForm.tsx         -- Formulario criar/editar
-      PedidoDetail.tsx       -- Detalhe do pedido
-    producao/
-      KanbanBoard.tsx        -- Quadro kanban
-      KanbanColumn.tsx       -- Coluna do kanban
-      KanbanCard.tsx         -- Card de pedido
-    clientes/
-      ClientesList.tsx       -- Tabela de clientes
-      ClienteDetail.tsx      -- Ficha do cliente
-      ClienteForm.tsx        -- Formulario de edicao
-    financeiro/
-      FinanceiroOverview.tsx -- Resumo financeiro
-      ComissoesTable.tsx     -- Tabela de comissoes
-    vendedores/
-      VendedoresList.tsx     -- CRUD de vendedores
-      VendedorForm.tsx       -- Formulario de vendedor
-  hooks/
-    usePedidos.ts            -- Queries/mutations de pedidos
-    useClientes.ts           -- Queries/mutations de clientes
-    useVendedores.ts         -- Queries/mutations de vendedores
-    useDashboardStats.ts     -- Queries de metricas
-  pages/
-    Dashboard.tsx
-    Pedidos.tsx
-    PedidoDetalhe.tsx
-    Producao.tsx
-    Clientes.tsx
-    ClienteDetalhe.tsx
-    Financeiro.tsx
-    Vendedores.tsx
+GET https://api.pagar.me/core/v5/orders?page=1&size=50
+Authorization: Basic base64(PAGARME_API_KEY + ":")
+
+Retorno esperado: lista de orders com charges contendo:
+- amount (centavos)
+- paid_amount
+- gateway_fee (taxa)
+- status
+- paid_at / payment_date
+- last_transaction
 ```
 
-### Stack utilizada
-- **React + TypeScript** com Vite
-- **Tailwind CSS** + shadcn/ui (componentes ja instalados)
-- **React Router** para navegacao
-- **TanStack React Query** para data fetching
-- **Recharts** para graficos
-- **Supabase JS** para conexao com banco
+A funcao recebe query params `year`, `month`, `start_date`, `end_date` para filtrar e retorna os dados formatados para o frontend.
 
-### Banco de dados
-Nao sera necessaria nenhuma migracao inicial -- todas as tabelas ja existem com a estrutura adequada. Os dados serao consumidos diretamente das tabelas `pedidos`, `pedido_itens`, `clientes` e `vendedores`.
+### Calculo de Comissao no Sync
 
-### Observacao sobre autenticacao
-As tabelas atualmente tem politicas RLS publicas (permitem acesso sem autenticacao). O app funcionara sem login inicialmente, mas e recomendavel implementar autenticacao no futuro para proteger os dados.
+No `nuvemshop-sync`, apos calcular `valorLiquido`:
 
----
+```text
+baseComissao = valorBruto - taxaPagarme - frete
+comissao = baseComissao * (taxaComissaoWilliam / 100)
+vendedor_id = "97f16c11-..."
+```
 
-## Ordem de implementacao
+### Numeracao WhatsApp
 
-1. Layout (Sidebar + AppLayout)
-2. Dashboard com KPIs e graficos
-3. Modulo de Pedidos (lista + formulario + detalhe)
-4. Modulo de Producao (Kanban)
-5. Modulo de Clientes (CRM)
-6. Modulo Financeiro + Vendedores
+Consulta SQL para proximo numero:
+```text
+SELECT numero_pedido FROM pedidos 
+WHERE numero_pedido LIKE '%-WP' 
+ORDER BY created_at DESC LIMIT 1
+```
+Incrementa o numero e formata como `###-WP` (ex: `001-WP`, `002-WP`).
 
-Cada etapa sera implementada de forma incremental para facilitar a revisao.
+### Ordem de implementacao
+
+1. Copiar logo e atualizar sidebar
+2. Ajustar sync Nuvemshop (comissao + vendedor padrao)
+3. Ajustar numeracao WP nos hooks/formularios
+4. Criar edge function pagarme-extrato
+5. Adicionar aba Pagarme no Financeiro com filtros
+6. Corrigir cor do grafico de barras
