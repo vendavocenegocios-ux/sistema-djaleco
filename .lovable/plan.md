@@ -1,66 +1,57 @@
 
 
-# Plano: Corrigir Sync para Popular Taxas Pagarme
+# Plano: Botao "Copiar para WhatsApp" nos Pedidos
 
-## Problema Identificado
+## O que sera feito
 
-O edge function `nuvemshop-sync` processa 423 pedidos sequencialmente (cada pedido faz ~5 queries ao Supabase), causando timeout antes de chegar a parte que cruza com o Pagarme (linhas 177-257). Por isso, nenhum pedido tem `taxa_pagarme` preenchida.
+Adicionar um botao de copia em cada pedido (na tabela desktop e nos cards mobile) que monta o texto formatado com os dados do pedido e copia para a area de transferencia, pronto para colar no WhatsApp.
 
-## Solucao
+## Dados disponiveis vs campos solicitados
 
-Separar a logica de cruzamento Pagarme em uma **edge function independente** chamada `pagarme-fees-sync`. Isso permite:
-1. Executar o cruzamento Pagarme separadamente, sem depender do sync completo da Nuvemshop
-2. A funcao e rapida: busca charges do Pagarme, busca pedidos com `taxa_pagarme = 0`, e atualiza
+| Campo | Fonte | Disponivel |
+|-------|-------|------------|
+| NOME | `pedidos.cliente_nome` | Sim |
+| CELULAR | `pedidos.cliente_telefone` | Sim |
+| PROFISSAO | -- | Nao existe no banco |
+| ENDERECO COMPLETO | -- | Nao existe no banco |
+| BAIRRO | -- | Nao existe no banco |
+| CIDADE | `pedidos.cidade` | Sim |
+| ESTADO | `pedidos.estado` | Sim |
+| CEP | -- | Nao existe no banco |
+| CPF/CNPJ | `clientes.documento` | Sim (via join por nome) |
+| DATA DO PEDIDO | `pedidos.data_pedido` | Sim |
+| PEDIDO (itens) | `pedido_itens` | Sim (precisa fetch) |
 
-### Nova Edge Function: `pagarme-fees-sync`
+Campos sem dados no banco serao deixados em branco (ex: `PROFISSAO:` / `CEP:`) para preenchimento manual.
 
-Logica:
-1. Buscar charges do Pagarme API v5 (ultimos 3 meses, paginado)
-2. Montar mapa `order_code -> fee` (amount - paid_amount)
-3. Buscar pedidos com `taxa_pagarme = 0` no Supabase
-4. Para cada match, atualizar `taxa_pagarme`, recalcular `valor_liquido` e `comissao`
-5. Retornar contagem de atualizacoes
+## Implementacao
 
-### Otimizar `nuvemshop-sync`
+### `usePedidos.ts`
+- Alterar `usePedidos()` para fazer join com `clientes` pelo nome ou adicionar campo `cliente_id` -- mais simples: buscar documento do cliente inline quando copiar.
 
-Remover a secao de Pagarme do sync (linhas 177-257) para reduzir tempo de execucao. O sync foca apenas em importar pedidos da Nuvemshop.
-
-Adicionalmente, nao sobrescrever `etapa_producao` e `etapa_entrada_em` em pedidos ja existentes (para nao resetar o que o usuario moveu no Kanban).
-
-## Arquivos
-
-### Criar
-- `supabase/functions/pagarme-fees-sync/index.ts` -- funcao dedicada ao cruzamento de taxas
-
-### Editar
-- `supabase/functions/nuvemshop-sync/index.ts` -- remover secao Pagarme (ja tera funcao propria), preservar etapa em updates
-- `supabase/config.toml` -- registrar `pagarme-fees-sync` com `verify_jwt = false`
-- `src/pages/Pedidos.tsx` -- adicionar botao "Sync Taxas Pagarme" para chamar a nova funcao
-
-## Detalhes Tecnicos
-
-### pagarme-fees-sync (logica principal)
-
+### `Pedidos.tsx`
+- Funcao `handleCopyWhatsApp(pedido)`:
+  1. Busca `pedido_itens` do pedido (query rapida por `pedido_id`)
+  2. Busca `clientes.documento` pelo `cliente_nome`
+  3. Monta texto sem espacos entre linhas:
 ```text
-1. Auth: Basic base64(PAGARME_API_KEY + ":")
-2. GET https://api.pagar.me/core/v5/charges?page=X&size=100&created_since=3meses
-3. Map: orderCode -> { fee: amount/100 - paid_amount/100 }
-4. SELECT pedidos WHERE taxa_pagarme = 0
-5. Para cada pedido com match:
-   - taxa_pagarme = fee
-   - valor_liquido = valor_bruto - frete - taxa_pagarme
-   - comissao = (valor_bruto - taxa_pagarme - frete) * taxa_vendedor / 100
-   - UPDATE pedido
+NOME: João Silva
+CELULAR: (11) 99999-9999
+PROFISSÃO:
+ENDEREÇO COMPLETO:
+BAIRRO:
+CIDADE: São Paulo
+ESTADO: SP
+CEP:
+CPF/CNPJ: 123.456.789-00
+DATA DO PEDIDO: 15/01/2025
+PEDIDO: 2x Jaleco Branco P, 1x Scrub Azul M
 ```
+  4. `navigator.clipboard.writeText(texto)` + toast de confirmacao
 
-### Preservar etapa no sync Nuvemshop
+- Botao com icone `Copy` na tabela (coluna extra) e no card mobile
+- Texto compacto, sem linhas em branco entre campos
 
-No update de pedidos existentes, excluir `etapa_producao` e `etapa_entrada_em` do payload para nao resetar o que foi movido manualmente.
+### Arquivos a editar
+- `src/pages/Pedidos.tsx` -- adicionar botao e funcao de copia
 
-### Ordem de execucao
-
-1. Criar `pagarme-fees-sync`
-2. Limpar `nuvemshop-sync` (remover bloco Pagarme, preservar etapas)
-3. Registrar em `config.toml`
-4. Deploy e executar
-5. Verificar se `taxa_pagarme` foi populada nos pedidos
