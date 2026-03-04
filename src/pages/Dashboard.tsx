@@ -57,7 +57,7 @@ export default function Dashboard() {
       <AppLayout>
         <div className="space-y-6">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
             {[1, 2, 3, 4, 5].map((i) => (
               <Skeleton key={i} className="h-24 sm:h-28 rounded-lg" />
             ))}
@@ -147,7 +147,7 @@ export default function Dashboard() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-1 sm:pb-2 p-3 sm:p-6 sm:pb-2">
               <CardTitle className="text-[11px] sm:text-sm font-medium text-muted-foreground">Pedidos</CardTitle>
@@ -168,7 +168,7 @@ export default function Dashboard() {
               <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-              <div className="text-lg sm:text-2xl font-bold">{formatCurrency(stats?.faturamentoBruto || 0)}</div>
+              <div className="text-sm sm:text-2xl font-bold break-all">{formatCurrency(stats?.faturamentoBruto || 0)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -177,7 +177,7 @@ export default function Dashboard() {
               <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-              <div className="text-lg sm:text-2xl font-bold">{formatCurrency(stats?.faturamentoLiquido || 0)}</div>
+              <div className="text-sm sm:text-2xl font-bold break-all">{formatCurrency(stats?.faturamentoLiquido || 0)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -186,7 +186,7 @@ export default function Dashboard() {
               <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-              <div className="text-lg sm:text-2xl font-bold">{formatCurrency(stats?.ticketMedio || 0)}</div>
+              <div className="text-sm sm:text-2xl font-bold break-all">{formatCurrency(stats?.ticketMedio || 0)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -203,7 +203,7 @@ export default function Dashboard() {
         {/* Financial section */}
         <div>
           <h2 className="text-sm sm:text-base font-semibold text-muted-foreground mb-3">Financeiro</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             <Card className="border-l-4 border-l-destructive">
               <CardHeader className="pb-1 p-3 sm:p-6 sm:pb-2">
                 <div className="flex items-center gap-1.5">
@@ -212,7 +212,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-                <div className="text-base sm:text-xl font-bold text-destructive">{formatCurrency(stats?.totalTaxasPagarme || 0)}</div>
+                <div className="text-sm sm:text-xl font-bold text-destructive break-all">{formatCurrency(stats?.totalTaxasPagarme || 0)}</div>
               </CardContent>
             </Card>
             <Card className="border-l-4 border-l-orange-400">
@@ -223,7 +223,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-                <div className="text-base sm:text-xl font-bold text-orange-600">{formatCurrency(stats?.totalFrete || 0)}</div>
+                <div className="text-sm sm:text-xl font-bold text-orange-600 break-all">{formatCurrency(stats?.totalFrete || 0)}</div>
               </CardContent>
             </Card>
             <Card className="border-l-4 border-l-purple-400">
@@ -234,7 +234,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-                <div className="text-base sm:text-xl font-bold text-purple-600">{formatCurrency(stats?.totalComissoes || 0)}</div>
+                <div className="text-sm sm:text-xl font-bold text-purple-600 break-all">{formatCurrency(stats?.totalComissoes || 0)}</div>
               </CardContent>
             </Card>
             <Card className="border-l-4 border-l-green-500">
@@ -245,7 +245,7 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-                <div className="text-base sm:text-xl font-bold text-green-600">{formatCurrency(stats?.lucroOperacional || 0)}</div>
+                <div className="text-sm sm:text-xl font-bold text-green-600 break-all">{formatCurrency(stats?.lucroOperacional || 0)}</div>
               </CardContent>
             </Card>
           </div>

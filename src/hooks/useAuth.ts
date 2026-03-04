@@ -32,29 +32,24 @@ export function useAuthProvider(): AuthContextType {
   const [loading, setLoading] = useState(true);
 
   const fetchRole = useCallback(async (userId: string) => {
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .single();
-    setRole((data?.role as AppRole) ?? "user");
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .single();
+      setRole((data?.role as AppRole) ?? "user");
+    } catch {
+      setRole("user");
+    }
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          await fetchRole(currentUser.id);
-        } else {
-          setRole(null);
-        }
-        setLoading(false);
-      }
-    );
+    let mounted = true;
 
+    // Get initial session first
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
@@ -63,13 +58,35 @@ export function useAuthProvider(): AuthContextType {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Then listen for changes — do NOT await inside callback
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!mounted) return;
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          // Defer async work outside the callback to avoid blocking
+          setTimeout(() => {
+            if (mounted) fetchRole(currentUser.id);
+          }, 0);
+        } else {
+          setRole(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [fetchRole]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
     setUser(null);
     setRole(null);
+    await supabase.auth.signOut();
+    window.location.href = "/login";
   }, []);
 
   return {

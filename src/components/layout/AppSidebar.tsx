@@ -7,6 +7,7 @@ import {
   DollarSign,
   UserCog,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -38,6 +39,7 @@ const mainItems = [
 const financeItems = [
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
   { title: "Vendedores", url: "/vendedores", icon: UserCog, adminOnly: true },
+  { title: "Sistema", url: "/sistema", icon: Settings, adminOnly: true },
 ];
 
 export function AppSidebar() {
