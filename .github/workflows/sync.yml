@@ -1,0 +1,21 @@
+name: Sync to djalecooficial-ui
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push to destination repo
+        run: |
+          git config user.email "sync@action.com"
+          git config user.name "Sync Action"
+          git remote add dest https://x-access-token:${{ secrets.DEST_TOKEN }}@github.com/djalecooficial-ui/sistema-djaleco.git
+          git push dest main --force
