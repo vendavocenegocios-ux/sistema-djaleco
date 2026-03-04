@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
 function isIOS() {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -25,25 +30,38 @@ export function usePWAInstall() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      setShowManualInstall(false);
     };
 
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", () => {
+    const installedHandler = () => {
       setIsInstalled(true);
       setDeferredPrompt(null);
       setShowManualInstall(false);
-    });
+    };
 
-    // Fallback: if no prompt after 3s (iOS or conditions not met), show manual instructions
-    const timeout = setTimeout(() => {
-      if (!isStandalone()) {
-        setShowManualInstall(true);
-      }
-    }, 3000);
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", installedHandler);
+
+    // On mobile, show manual install instructions immediately
+    // since beforeinstallprompt never fires on iOS Safari
+    if (isMobileDevice()) {
+      setShowManualInstall(true);
+    } else {
+      const timeout = setTimeout(() => {
+        if (!isStandalone()) {
+          setShowManualInstall(true);
+        }
+      }, 2000);
+      return () => {
+        window.removeEventListener("beforeinstallprompt", handler);
+        window.removeEventListener("appinstalled", installedHandler);
+        clearTimeout(timeout);
+      };
+    }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
-      clearTimeout(timeout);
+      window.removeEventListener("appinstalled", installedHandler);
     };
   }, []);
 
