@@ -128,8 +128,7 @@ export default function Pedidos() {
       const origemLabel = p.origem === "whatsapp" ? "Zap" : "Site";
 
       const texto = [
-        `*Data: ${format(new Date(p.data_pedido), "dd/MM/yyyy")}*`,
-        `*Pedido: #${p.numero_pedido} - ${origemLabel}*`,
+        `*Data: ${format(new Date(p.data_pedido), "dd/MM/yyyy")}* | *Pedido: #${p.numero_pedido} - ${origemLabel}*`,
         ``,
         `Nome: ${p.cliente_nome}`,
         `Celular: ${p.cliente_telefone || ""}`,
