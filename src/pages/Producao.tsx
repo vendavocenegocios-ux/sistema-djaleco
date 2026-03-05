@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { Phone, MapPin, Clock } from "lucide-react";
 import { useState, useEffect, useCallback, useRef } from "react";
 
-const ETAPAS = ["Planejamento", "Corte", "Costura", "Acabamento", "Embalagem", "Despachado"];
+const ETAPAS = ["Comercial", "Planejamento", "Corte", "Costura", "Acabamento", "Embalagem", "Despachado"];
 
 const PRAZOS_ETAPA: Record<string, number> = {
   Corte: 4,
