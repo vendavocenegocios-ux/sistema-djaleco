@@ -1,53 +1,42 @@
 
 
-## Plano: Corrigir Loop Mobile, Dashboard Truncado e Aba Sistema
+## Plan
 
-### 1. Corrigir Loop no Mobile e Botão Sair
+### 1. Novo formato do texto copiado para WhatsApp
 
-**Causa raiz**: O hook `useAuthProvider` faz `await fetchRole()` dentro do callback `onAuthStateChange`. A documentação do Supabase alerta que não se deve fazer `await` de chamadas assíncronas dentro desse callback, pois isso bloqueia o processamento de eventos de autenticação subsequentes. Quando o `signOut` dispara, o callback tenta executar mas fica preso no `await` anterior, criando um deadlock/loop.
+Alterar `handleCopyWhatsApp` para gerar o texto com:
+- **Data em negrito** no topo (usando `*` do WhatsApp: `*dd/MM/yyyy*`)
+- **Número do pedido** logo abaixo
+- Depois os demais campos como estão
 
-**Solução** (`src/hooks/useAuth.ts`):
-- Usar `setTimeout` para desacoplar o `fetchRole` do callback do `onAuthStateChange` (não bloquear o callback)
-- Garantir que `getSession()` execute primeiro e só depois registrar o listener
-- Adicionar navegação para `/login` no `signOut` via `window.location`
+Exemplo do novo formato:
+```text
+*05/03/2026*
+#001-ZAP
 
-### 2. Dashboard Truncado
+NOME: Fulano
+CELULAR: (11) 99999-9999
+...
+```
 
-**Causa raiz**: O grid `grid-cols-2 lg:grid-cols-5` com 5 colunas em telas médias/grandes faz os cards ficarem muito estreitos, truncando valores monetários como "R$ 2.098,46".
+### 2. Nova etapa "Comercial" antes de "Planejamento"
 
-**Solução** (`src/pages/Dashboard.tsx`):
-- Mudar grid para `grid-cols-2 md:grid-cols-3 xl:grid-cols-5` nos KPIs
-- Adicionar `break-all` ou `text-wrap` nos valores monetários
-- Reduzir o tamanho da fonte dos valores em telas menores
-- Garantir que os cards financeiros também se adaptem: `grid-cols-2 md:grid-cols-2 xl:grid-cols-4`
+Atualizar o array `ETAPAS` para incluir "Comercial" como primeira etapa:
+```
+["Comercial", "Planejamento", "Corte", "Costura", "Acabamento", "Embalagem", "Despachado", "Entregue"]
+```
 
-### 3. Aba "Sistema" (Admin Only)
+### 3. Avançar etapa automaticamente ao copiar
 
-**Arquivos novos**: `src/pages/Sistema.tsx`
+Após copiar o texto, se o pedido estiver na etapa "Comercial", avançar automaticamente para "Planejamento" usando `updatePedido.mutate`.
 
-**Arquivos modificados**:
-- `src/App.tsx` — adicionar rota `/sistema` protegida com `adminOnly`
-- `src/components/layout/AppSidebar.tsx` — adicionar item "Sistema" no menu, visível apenas para admin
+### 4. Sobre automação com WhatsApp
 
-**Conteúdo da página Sistema**:
-- **Saúde Geral**: indicador verde/amarelo/vermelho baseado na conectividade com Supabase
-- **Banco de Dados**: contagem de tabelas, total de registros por tabela (pedidos, clientes, produtos, vendedores)
-- **Autenticação**: número de usuários registrados, último login
-- **Edge Functions**: listar as funções implantadas e status
-- **Armazenamento**: informações sobre buckets
-- **Latência**: medir tempo de resposta de uma query simples ao Supabase
-- **Versão do App**: exibir data do build ou versão
-- Cards com ícones e indicadores visuais de status (verde = ok, vermelho = problema)
+Explicação para o usuario: Nao e possivel integrar diretamente com o WhatsApp pessoal (a API oficial do WhatsApp Business e paga e requer conta Business verificada). Porem, ha duas alternativas viáveis:
 
-Dados obtidos via queries diretas ao Supabase (contagens das tabelas, ping de latência, verificação de sessão auth).
+- **Zapier/n8n**: Ao clicar no botão de copiar, alem de copiar o texto e avançar a etapa, podemos enviar um webhook para o Zapier/n8n que dispara uma automação (ex: enviar mensagem via WhatsApp Business API, notificar no Slack, etc.)
+- **Fluxo manual otimizado** (o que sera implementado): copiar texto formatado para WhatsApp + avançar etapa automaticamente. O usuario cola manualmente no WhatsApp.
 
-### Resumo de Mudanças
-
-| Arquivo | Ação |
-|---------|------|
-| `src/hooks/useAuth.ts` | Corrigir race condition no onAuthStateChange, melhorar signOut |
-| `src/pages/Dashboard.tsx` | Ajustar grid responsivo para evitar truncamento |
-| `src/pages/Sistema.tsx` | Criar página de saúde do sistema (admin only) |
-| `src/App.tsx` | Adicionar rota `/sistema` |
-| `src/components/layout/AppSidebar.tsx` | Adicionar "Sistema" no menu admin |
+### Arquivos alterados
+- `src/pages/Pedidos.tsx` — formato do texto, array ETAPAS, lógica de avanço automático de etapa no clique de copiar
 
