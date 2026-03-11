@@ -224,6 +224,7 @@ export default function Pedidos() {
                 <TableHead>Etapa</TableHead>
                 <TableHead>Origem</TableHead>
                 <TableHead>Valor Bruto</TableHead>
+                <TableHead>Rastreio</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
