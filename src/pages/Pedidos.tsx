@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { Search, Plus, RefreshCw, Copy, Truck } from "lucide-react";
+import { Search, Plus, RefreshCw, Copy, Truck, Package } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Pedido } from "@/hooks/usePedidos";
