@@ -258,6 +258,16 @@ export default function Pedidos() {
                     <TableCell><Badge variant="outline">{p.origem}</Badge></TableCell>
                     <TableCell>{formatCurrency(Number(p.valor_bruto))}</TableCell>
                     <TableCell>
+                      {p.rastreio_codigo ? (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Package className="h-3.5 w-3.5 text-green-600" />
+                          {p.rastreio_codigo}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCopyWhatsApp(p)} title="Copiar para WhatsApp">
                         <Copy className="h-4 w-4" />
                       </Button>
