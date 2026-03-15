@@ -574,8 +574,10 @@ export default function Financeiro() {
                   <Card key={p.id} className="p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-sm">#{p.numero_pedido}</span>
-                      <Badge variant={p.comissao_paga ? "secondary" : "destructive"} className="text-[10px]">
-                        {p.comissao_paga ? "Pago" : "Pendente"}
+                      <Badge variant={p.comissao_paga ? "secondary" : "destructive"} className="text-[10px] cursor-pointer"
+                        onClick={() => p.comissao_paga ? handleDesmarcarComissao(p.id) : undefined}
+                      >
+                        {p.comissao_paga ? "Pago ✕" : "Pendente"}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{p.cliente_nome} · {vendedorItem?.nome || "—"}</p>
