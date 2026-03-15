@@ -167,7 +167,7 @@ export default function Financeiro() {
   const totalLiquido = filteredPedidos.reduce((s, p) => s + Number(p.valor_liquido), 0);
   const totalFrete = filteredPedidos.reduce((s, p) => s + Number(p.frete), 0);
   const totalTaxas = filteredPedidos.reduce((s, p) => s + Number(p.taxa_pagarme), 0);
-  const totalComissoes = filteredPedidos.reduce((s, p) => s + Number(p.comissao), 0);
+  const totalComissoes = filteredPedidos.filter(p => p.status_pagamento !== "pendente").reduce((s, p) => s + Number(p.comissao), 0);
 
   const revenueByMonth: Record<string, number> = {};
   filteredPedidos.forEach((p) => {
