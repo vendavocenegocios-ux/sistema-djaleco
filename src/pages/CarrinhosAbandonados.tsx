@@ -68,19 +68,31 @@ const WEBHOOK_OPTIONS = [
 export default function CarrinhosAbandonados() {
   const [days, setDays] = useState("30");
   const [sendingCartId, setSendingCartId] = useState<number | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState(WEBHOOK_OPTIONS[0].value);
-  const [customWebhook, setCustomWebhook] = useState("");
+  const savedWebhook = localStorage.getItem("webhook_url") || WEBHOOK_OPTIONS[0].value;
+  const savedCustom = localStorage.getItem("webhook_custom") || "";
+  const [webhookUrl, setWebhookUrl] = useState(savedWebhook);
+  const [customWebhook, setCustomWebhook] = useState(savedCustom);
+  const [activeWebhook, setActiveWebhook] = useState(savedWebhook === "__custom__" ? savedCustom : savedWebhook);
+  const isDirty = (webhookUrl === "__custom__" ? customWebhook : webhookUrl) !== activeWebhook;
+
+  const handleSaveWebhook = () => {
+    const url = webhookUrl === "__custom__" ? customWebhook : webhookUrl;
+    if (!url) { toast.error("Informe uma URL válida"); return; }
+    setActiveWebhook(url);
+    localStorage.setItem("webhook_url", webhookUrl);
+    localStorage.setItem("webhook_custom", customWebhook);
+    toast.success("Webhook salvo!");
+  };
   const isMobile = useIsMobile();
 
   const handleSendWebhook = async (c: AbandonedCheckout) => {
-    const activeUrl = webhookUrl === "__custom__" ? customWebhook : webhookUrl;
-    if (!activeUrl) {
-      toast.error("URL do webhook não configurada");
+    if (!activeWebhook) {
+      toast.error("Salve um webhook antes de enviar");
       return;
     }
     setSendingCartId(c.id);
     try {
-      const res = await fetch(activeUrl, {
+      const res = await fetch(activeWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -184,8 +196,11 @@ export default function CarrinhosAbandonados() {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
               )}
-              <Badge variant={webhookUrl === WEBHOOK_OPTIONS[0].value ? "default" : "secondary"} className="shrink-0">
-                {webhookUrl === WEBHOOK_OPTIONS[0].value ? "Produção" : webhookUrl === "__custom__" ? "Custom" : "Teste"}
+              <Button size="sm" onClick={handleSaveWebhook} disabled={!isDirty} className="shrink-0">
+                Salvar
+              </Button>
+              <Badge variant={activeWebhook === WEBHOOK_OPTIONS[0].value ? "default" : "secondary"} className="shrink-0">
+                {activeWebhook === WEBHOOK_OPTIONS[0].value ? "Produção" : activeWebhook === WEBHOOK_OPTIONS[1].value ? "Teste" : "Custom"}
               </Badge>
             </div>
           </CardContent>
