@@ -62,7 +62,37 @@ const fetchAbandonedCarts = async (days: number): Promise<AbandonedCheckout[]> =
 
 export default function CarrinhosAbandonados() {
   const [days, setDays] = useState("30");
+  const [sendingCartId, setSendingCartId] = useState<number | null>(null);
   const isMobile = useIsMobile();
+
+  const handleSendWebhook = async (c: AbandonedCheckout) => {
+    const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
+    if (!webhookUrl) {
+      toast.error("URL do webhook não configurada (VITE_N8N_WEBHOOK_URL)");
+      return;
+    }
+    setSendingCartId(c.id);
+    try {
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cart_id: String(c.id),
+          phone: c.customer.phone?.replace(/\D/g, "") || "",
+          customer_name: c.customer.name,
+          total: c.total,
+          recovery_url: c.recovery_url || "",
+          products: c.products,
+        }),
+      });
+      if (!res.ok) throw new Error(`Erro ${res.status}`);
+      toast.success("Mensagem enviada com sucesso!");
+    } catch (err) {
+      toast.error(`Falha ao enviar: ${err instanceof Error ? err.message : "Erro desconhecido"}`);
+    } finally {
+      setSendingCartId(null);
+    }
+  };
 
   const { data: checkouts, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["abandoned-carts", days],
