@@ -8,6 +8,7 @@ import {
   UserCog,
   LogOut,
   Settings,
+  ShoppingCart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -34,6 +35,7 @@ const mainItems = [
   { title: "Produção", url: "/producao", icon: Factory },
   { title: "Produtos", url: "/produtos", icon: Package },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Carrinhos", url: "/carrinhos-abandonados", icon: ShoppingCart },
 ];
 
 const financeItems = [
