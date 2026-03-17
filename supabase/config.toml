@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.superfrete-tracking]
 verify_jwt = false
+
+[functions.nuvemshop-abandoned]
+verify_jwt = false
