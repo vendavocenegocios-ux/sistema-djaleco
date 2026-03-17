@@ -90,13 +90,9 @@ export default function CarrinhosAbandonados() {
       toast.error("Salve um webhook antes de enviar");
       return;
     }
-    if (!activeUrl) {
-      toast.error("URL do webhook não configurada");
-      return;
-    }
     setSendingCartId(c.id);
     try {
-      const res = await fetch(activeUrl, {
+      const res = await fetch(activeWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
