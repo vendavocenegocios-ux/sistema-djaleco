@@ -261,16 +261,15 @@ export default function CarrinhosAbandonados() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              asChild
+                              disabled={sendingCartId === c.id}
+                              onClick={() => handleSendWebhook(c)}
+                              title="Enviar WhatsApp via webhook"
                             >
-                              <a
-                                href={`https://wa.me/${c.customer.phone.replace(/\D/g, "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="WhatsApp"
-                              >
+                              {sendingCartId === c.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
                                 <Phone className="h-4 w-4" />
-                              </a>
+                              )}
                             </Button>
                           )}
                           {c.recovery_url && (
