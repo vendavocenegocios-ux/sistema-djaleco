@@ -154,6 +154,42 @@ export default function CarrinhosAbandonados() {
           </div>
         </div>
 
+        {/* Webhook Selector */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground shrink-0">
+                <Webhook className="h-4 w-4" />
+                Webhook:
+              </div>
+              <Select value={webhookUrl} onValueChange={setWebhookUrl}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Selecione o webhook" />
+                </SelectTrigger>
+                <SelectContent>
+                  {WEBHOOK_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.label} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__custom__">Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+              {webhookUrl === "__custom__" && (
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={customWebhook}
+                  onChange={(e) => setCustomWebhook(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              )}
+              <Badge variant={webhookUrl === WEBHOOK_OPTIONS[0].value ? "default" : "secondary"} className="shrink-0">
+                {webhookUrl === WEBHOOK_OPTIONS[0].value ? "Produção" : webhookUrl === "__custom__" ? "Custom" : "Teste"}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Card>
