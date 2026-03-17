@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, ShoppingCart, RefreshCw, AlertTriangle, CheckCircle2, User, Mail, Phone } from "lucide-react";
+import { ExternalLink, ShoppingCart, RefreshCw, AlertTriangle, CheckCircle2, User, Mail, Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -62,7 +62,37 @@ const fetchAbandonedCarts = async (days: number): Promise<AbandonedCheckout[]> =
 
 export default function CarrinhosAbandonados() {
   const [days, setDays] = useState("30");
+  const [sendingCartId, setSendingCartId] = useState<number | null>(null);
   const isMobile = useIsMobile();
+
+  const handleSendWebhook = async (c: AbandonedCheckout) => {
+    const webhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
+    if (!webhookUrl) {
+      toast.error("URL do webhook não configurada (VITE_N8N_WEBHOOK_URL)");
+      return;
+    }
+    setSendingCartId(c.id);
+    try {
+      const res = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cart_id: String(c.id),
+          phone: c.customer.phone?.replace(/\D/g, "") || "",
+          customer_name: c.customer.name,
+          total: c.total,
+          recovery_url: c.recovery_url || "",
+          products: c.products,
+        }),
+      });
+      if (!res.ok) throw new Error(`Erro ${res.status}`);
+      toast.success("Mensagem enviada com sucesso!");
+    } catch (err) {
+      toast.error(`Falha ao enviar: ${err instanceof Error ? err.message : "Erro desconhecido"}`);
+    } finally {
+      setSendingCartId(null);
+    }
+  };
 
   const { data: checkouts, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["abandoned-carts", days],
@@ -231,16 +261,15 @@ export default function CarrinhosAbandonados() {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              asChild
+                              disabled={sendingCartId === c.id}
+                              onClick={() => handleSendWebhook(c)}
+                              title="Enviar WhatsApp via webhook"
                             >
-                              <a
-                                href={`https://wa.me/${c.customer.phone.replace(/\D/g, "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                title="WhatsApp"
-                              >
+                              {sendingCartId === c.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
                                 <Phone className="h-4 w-4" />
-                              </a>
+                              )}
                             </Button>
                           )}
                           {c.recovery_url && (
@@ -302,14 +331,17 @@ export default function CarrinhosAbandonados() {
                     <span className="font-bold">{formatCurrency(c.total)}</span>
                     <div className="flex gap-2">
                       {c.customer.phone && (
-                        <Button variant="ghost" size="sm" asChild>
-                          <a
-                            href={`https://wa.me/${c.customer.phone.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={sendingCartId === c.id}
+                          onClick={() => handleSendWebhook(c)}
+                        >
+                          {sendingCartId === c.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
                             <Phone className="h-4 w-4" />
-                          </a>
+                          )}
                         </Button>
                       )}
                       {c.recovery_url && (
