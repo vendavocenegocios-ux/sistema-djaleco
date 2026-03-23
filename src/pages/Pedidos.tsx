@@ -80,6 +80,7 @@ export default function Pedidos() {
       if (error) throw error;
       if (data?.success) {
         toast.success(data.message || "Taxas atualizadas!");
+        queryClient.invalidateQueries({ queryKey: ["pedidos"] });
       } else {
         toast.error(data?.error || "Erro no sync de taxas");
       }
